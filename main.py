@@ -51,7 +51,7 @@ with st.sidebar:
         label_visibility="visible"
     )
 
-    time_to_maturity = st.slider('Time to Maturity (Days)', min_value=1.0, max_value=1000.0, value=1.0, step=10.0) / 365
+    time_to_maturity = st.slider('Time to Maturity (Days)', min_value=1.0, max_value=1000.0, value=365.0, step=1.0) / 365
 
     risk_free_rate = st.number_input(
         "Risk-Free Return Rate", 
@@ -100,5 +100,13 @@ option = BlackScholes(underlying_price, strike_price, time_to_maturity, risk_fre
 call_price = option.calculate_call_price()
 put_price = option.calculate_put_price()
 
-st.write(f"Call Price: {call_price}")
-st.write(f"Put Price: {put_price}")
+st.write(f"Call Price: {round(call_price, 2)}")
+st.write(f"Put Price: {round(put_price, 2)}")
+st.write(f"Call Delta: {round(option.delta('C'), 4)}")
+st.write(f"Put Delta: {round(option.delta('P'), 4)}")
+st.write(f"Gamma: {round(option.gamma(), 4)}")
+st.write(f"Vega: {round(option.vega(), 4)}")
+st.write(f"Call Rho: {round(option.rho('C'), 4)}")
+st.write(f"Put Rho: {round(option.rho('P'), 4)}")
+st.write(f"Call Theta: {round(option.theta('C'), 4)}")
+st.write(f"Put Theta: {round(option.theta('P'), 4)}")

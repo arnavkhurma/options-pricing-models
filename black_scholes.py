@@ -29,13 +29,19 @@ class BlackScholes():
             self.risk_free_rate = risk_free_rate
             self.sigma = sigma
 
+    def d_one(self):
+        return (np.log(self.underlying / self.strike) + (self.risk_free_rate + 0.5 * self.sigma ** 2) * self.time) / (self.sigma * np.sqrt(self.time))
+    
+    def d_two(self):
+        return (np.log(self.underlying / self.strike) + (self.risk_free_rate - 0.5 * self.sigma ** 2) * self.time) / (self.sigma * np.sqrt(self.time))
+
     def calculate_call_price(self):
         """
         CALL OPTION      
         Calculates d1 and d2, and then uses those inputs to price the call option
         """
-        d1 = (np.log(self.underlying / self.strike) + (self.risk_free_rate + 0.5 * self.sigma ** 2) * self.time) / (self.sigma * np.sqrt(self.time))
-        d2 = (np.log(self.underlying / self.strike) + (self.risk_free_rate - 0.5 * self.sigma ** 2) * self.time) / (self.sigma * np.sqrt(self.time))
+        d1 = self.d_one()
+        d2 = self.d_two()
         price = (self.underlying * norm.cdf(d1, 0.0, 1.0) - self.strike * np.exp(-self.risk_free_rate * self.time) * norm.cdf(d2, 0.0, 1.0))
         return price
     
@@ -44,9 +50,8 @@ class BlackScholes():
         PUT OPTION
         Calculates d1 and d2, and then uses those inputs to price the put option
         """
-        d1 = (np.log(self.underlying / self.strike) + (self.risk_free_rate + 0.5 * self.sigma ** 2) * self.time) / (self.sigma * np.sqrt(self.time))
-        d2 = (np.log(self.underlying / self.strike) + (self.risk_free_rate - 0.5 * self.sigma ** 2) * self.time) / (self.sigma * np.sqrt(self.time))
-        
+        d1 = self.d_one()
+        d2 = self.d_two()
         return (self.strike * np.exp(-self.risk_free_rate * self.time) * norm.cdf(-d2, 0.0, 1.0) - self.underlying * norm.cdf(-d1, 0.0, 1.0))
     
     def printStats(self):
@@ -58,3 +63,37 @@ class BlackScholes():
 
         print("Call Option Price: ", self.calculate_call_price())
         print("Put Option Price: ", self.calculate_put_price())
+
+    # Calculate Greeks
+    def delta(self, type): 
+        if type == "C":
+            return norm.cdf(self.d_one())
+        elif type == "P":
+            return norm.cdf(self.d_one()) - 1
+        else:
+            return None
+        
+    def gamma(self):
+        return norm.pdf(self.d_one()) / (self.underlying * self.sigma * np.sqrt(self.time))
+
+    def theta(self, type):
+        a = (-self.underlying * norm.pdf(self.d_one()) * self.sigma) / (2 * np.sqrt(self.time))
+        if type == "C":
+            b = self.risk_free_rate * self.strike * np.exp(-self.risk_free_rate * self.time) * norm.cdf(self.d_two())
+            return (a - b) * 0.01
+        elif type == "P":
+            b = self.risk_free_rate * self.strike * np.exp(-self.risk_free_rate * self.time) * norm.cdf(-self.d_two())
+            return (a + b) * 0.01
+        else:
+            return None
+        
+    def vega(self):
+        return (self.underlying * norm.pdf(self.d_one()) * np.sqrt(self.time) * 0.01)
+
+    def rho(self, type):
+        if type == "C":
+            return (self.strike * self.time * np.exp(-self.risk_free_rate * self.time) * norm.cdf(self.d_two()) * 0.01)
+        elif type == "P":
+            return -(self.strike * self.time * np.exp(-self.risk_free_rate * self.time) * norm.cdf(-self.d_two()) * 0.01)
+        else:
+            return None
